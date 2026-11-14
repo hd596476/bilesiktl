@@ -1,0 +1,42 @@
+name: Günlük veri güncelleme
+
+on:
+  schedule:
+    - cron: "30 22 * * 1-5"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: veri-guncelleme
+  cancel-in-progress: false
+
+jobs:
+  guncelle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Paketleri kur
+        run: pip install yfinance pandas lxml requests
+
+      - name: Veriyi güncelle
+        run: python scripts/update_data.py
+
+      - name: Değişikliği kaydet
+        run: |
+          git config user.name "bilesiktl-bot"
+          git config user.email "bilesiktl-bot@users.noreply.github.com"
+          git add data/prices.json
+          if git diff --cached --quiet; then
+            echo "Değişiklik yok."
+          else
+            git commit -m "Veri güncellemesi $(date -u +%Y-%m-%d)"
+            git push
+          fi
