@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BileşikTL</title>
+<meta name="description" content="TL ile yurt dışı hisse ve ETF yatırımı yapanlar için ücretsiz birikim ve ETF karşılaştırma hesaplayıcıları.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
+<style>
+/* Plan: beyaz zemin, lacivert marka, tek vurgu rengi altın yalnızca kritik rakamda.
+   Araçlar koyu bir "uygulama" bandında sekmeli; geri kalan sayfa ince çizgilerle ayrılmış, sakin bir yayın düzeni. */
+:root{
+  --bg:#ffffff;
+  --bg-soft:#f5f7fa;
+  --ink:#0f1b2b;
+  --muted:#5b6878;
+  --line:#e4e8ee;
+  --brand:#13315c;
+  --brand-ink:#ffffff;
+  --accent:#b8860b;
+  --good:#17785a;
+  --app:#0f1b2b;
+  --app-surface:#17263a;
+  --app-line:#263a52;
+  --app-ink:#eef3f8;
+  --app-muted:#9fb0c3;
+  --font:"Onest", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-serif:"Newsreader", Georgia, serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b1420; --bg-soft:#0f1a28; --ink:#e8eef5; --muted:#97a6b7; --line:#1d2b3c;
+    --brand:#8db4e2; --brand-ink:#0b1420; --accent:#e3b341; --good:#4cc79a;
+    --app:#111f30; --app-surface:#18293d; --app-line:#2a3f58; --app-ink:#eef3f8; --app-muted:#9fb0c3;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0b1420; --bg-soft:#0f1a28; --ink:#e8eef5; --muted:#97a6b7; --line:#1d2b3c;
+  --brand:#8db4e2; --brand-ink:#0b1420; --accent:#e3b341; --good:#4cc79a;
+  --app:#111f30; --app-surface:#18293d; --app-line:#2a3f58; --app-ink:#eef3f8; --app-muted:#9fb0c3;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;font-feature-settings:"tnum" 1}
+h1,h2,h3{margin:0;line-height:1.15;text-wrap:balance;letter-spacing:-.02em}
+p{margin:0}
+a{color:inherit}
+.wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+
+/* Üst bar */
+.bar{position:sticky;top:0;z-index:20;background:color-mix(in srgb, var(--bg) 92%, transparent);backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line)}
+.bar .wrap{display:flex;align-items:center;gap:32px;height:68px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:700;font-size:1.18rem;letter-spacing:-.02em}
+.brand svg{flex:none}
+.brand .tl{color:var(--muted);font-weight:500}
+.nav{display:flex;gap:26px;font-size:.94rem;color:var(--muted);flex:1}
+.nav a{text-decoration:none}
+.nav a:hover{color:var(--ink)}
+.rate{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--muted);white-space:nowrap}
+.rate strong{color:var(--ink);font-weight:600}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.dot.live{background:var(--good);box-shadow:0 0 0 3px color-mix(in srgb, var(--good) 22%, transparent)}
+
+/* Açılış */
+.hero{padding:72px 0 64px}
+.hero .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:64px;align-items:center}
+.hero h1{font-size:clamp(2.4rem,5vw,3.9rem);font-weight:800;letter-spacing:-.04em;line-height:1.02}
+.hero h1 span{font-family:var(--font-serif);font-style:italic;font-weight:500;letter-spacing:-.02em;color:var(--brand)}
+.hero .lead{font-size:1.15rem;color:var(--muted);max-width:46ch;margin-top:22px}
+.actions{display:flex;gap:14px;margin-top:32px;flex-wrap:wrap;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:8px;height:48px;padding:0 22px;border-radius:999px;font:600 .97rem var(--font);text-decoration:none;border:0;cursor:pointer;transition:transform .15s ease, background .15s ease}
+.btn-main{background:var(--brand);color:var(--brand-ink)}
+.btn-main:hover{transform:translateY(-1px)}
+.btn-link{color:var(--ink);padding:0 4px;height:auto;text-decoration:underline;text-underline-offset:5px;text-decoration-color:var(--line);text-decoration-thickness:2px}
+.btn-link:hover{text-decoration-color:var(--accent)}
+.facts{display:flex;gap:28px;margin-top:40px;padding-top:22px;border-top:1px solid var(--line);flex-wrap:wrap}
+.facts div{font-size:.88rem;color:var(--muted)}
+.facts b{display:block;color:var(--ink);font-size:.98rem;font-weight:600}
+
+/* Açılış hesap kutusu */
+.preview{background:var(--app);color:var(--app-ink);border-radius:22px;padding:30px;position:relative;overflow:hidden}
+.preview::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(closest-side, color-mix(in srgb, var(--accent) 30%, transparent), transparent);pointer-events:none}
+.preview h2{font-size:.95rem;font-weight:500;color:var(--app-muted);letter-spacing:0}
+.slider{margin-top:20px}
+.slider .row{display:flex;justify-content:space-between;align-items:baseline;font-size:.9rem;color:var(--app-muted)}
+.slider .row output{color:var(--app-ink);font-weight:600;font-size:1.05rem}
+input[type=range]{width:100%;margin:10px 0 0;accent-color:var(--accent);height:22px}
+.result{margin-top:26px;padding-top:22px;border-top:1px solid var(--app-line)}
+.result .lbl{font-size:.88rem;color:var(--app-muted)}
+.result .big{font-size:clamp(2.4rem,4.6vw,3.3rem);font-weight:700;letter-spacing:-.03em;line-height:1.05;color:var(--accent);margin-top:4px}
+.result .row2{display:flex;gap:28px;margin-top:16px;font-size:.88rem;color:var(--app-muted);flex-wrap:wrap}
+.result .row2 b{display:block;color:var(--app-ink);font-weight:600;font-size:1rem}
+.preview .foot{margin-top:18px;font-size:.78rem;color:var(--app-muted)}
+
+/* Bölüm başlıkları */
+section{scroll-margin-top:80px}
+.section{padding:88px 0}
+.section.soft{background:var(--bg-soft)}
+.head{max-width:640px;margin-bottom:40px}
+.kicker{font-size:.85rem;font-weight:600;color:var(--brand);margin-bottom:10px}
+.head h2{font-size:clamp(1.8rem,3.2vw,2.5rem);font-weight:700}
+.head p{color:var(--muted);margin-top:12px;font-size:1.05rem}
+
+/* Uygulama bandı */
+.app{background:var(--app);color:var(--app-ink);border-radius:24px;overflow:hidden}
+.tabs{display:flex;gap:4px;padding:10px;border-bottom:1px solid var(--app-line);overflow-x:auto}
+.tab{background:transparent;border:0;color:var(--app-muted);font:500 .95rem var(--font);padding:11px 18px;border-radius:12px;cursor:pointer;white-space:nowrap;display:flex;gap:8px;align-items:center}
+.tab:hover{color:var(--app-ink)}
+.tab[aria-selected="true"]{background:var(--app-surface);color:var(--app-ink)}
+.tab .soon{font-size:.72rem;padding:2px 8px;border-radius:999px;border:1px solid var(--app-line);color:var(--app-muted)}
+.pane{display:grid;grid-template-columns:330px 1fr}
+.pane[hidden]{display:none}
+.inputs{min-width:0;padding:28px;border-right:1px solid var(--app-line);display:grid;gap:18px;align-content:start}
+.inputs .grp{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--app-muted);margin-top:6px}
+.f label{display:flex;justify-content:space-between;font-size:.88rem;color:var(--app-muted);margin-bottom:6px}
+.f .box{display:flex;align-items:center;background:var(--app-surface);border:1px solid var(--app-line);border-radius:10px;transition:border-color .15s}
+.f .box:focus-within{border-color:var(--accent)}
+.f{min-width:0}
+.f input{flex:1;width:0;min-width:0;background:transparent;border:0;color:var(--app-ink);font:500 1rem var(--font);padding:11px 12px;font-feature-settings:"tnum" 1}
+.f input:focus{outline:none}
+.f .unit{padding:0 12px;color:var(--app-muted);font-size:.85rem}
+.inputs .note{font-size:.8rem;color:var(--app-muted);line-height:1.5}
+.outputs{padding:28px 32px;display:grid;gap:24px;align-content:start;min-width:0}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--app-line);border-radius:14px}
+.stat{padding:18px 20px}
+.stat + .stat{border-left:1px solid var(--app-line)}
+.stat small{display:block;font-size:.82rem;color:var(--app-muted)}
+.stat strong{display:block;font-size:1.5rem;font-weight:700;letter-spacing:-.02em;margin-top:4px}
+.stat.key strong{color:var(--accent)}
+.chart-wrap .legend{display:flex;gap:20px;font-size:.82rem;color:var(--app-muted);margin-bottom:10px;flex-wrap:wrap}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:8px;vertical-align:middle}
+svg.chart{width:100%;height:auto;display:block}
+svg.chart text{font:11px var(--font);fill:var(--app-muted)}
+details{border-top:1px solid var(--app-line);padding-top:6px}
+details summary{cursor:pointer;font-weight:500;font-size:.95rem;padding:10px 0;color:var(--app-ink)}
+.tscroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{padding:9px 10px;text-align:right;border-bottom:1px solid var(--app-line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--app-muted);font-weight:500;font-size:.8rem}
+
+/* Portföy */
+.hold-wrap{overflow-x:auto;border:1px solid var(--app-line);border-radius:14px}
+table.hold{min-width:680px;table-layout:fixed}
+table.hold th{white-space:normal;line-height:1.3;vertical-align:bottom}
+table.hold th,table.hold td{padding:8px 10px}
+table.hold td input{width:100%;min-width:0;background:var(--app-surface);border:1px solid var(--app-line);border-radius:8px;color:var(--app-ink);font:500 .92rem var(--font);padding:8px 9px;text-align:right;font-feature-settings:"tnum" 1}
+table.hold td input.sym{text-align:left;text-transform:uppercase;font-weight:600}
+table.hold td input:focus{outline:none;border-color:var(--accent)}
+table.hold td.val{color:var(--app-muted)}
+table.hold td input::placeholder{color:var(--app-ink);opacity:.62}
+table.hold td input.ovr{border-color:color-mix(in srgb, var(--accent) 55%, var(--app-line))}
+.nm{display:block;font-size:.72rem;color:var(--app-muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nm.bad{color:#f0a090}
+.hist{display:block;font-size:.72rem;color:var(--app-muted);margin-top:4px;white-space:nowrap}
+table.hold td{vertical-align:top}
+.del{background:transparent;border:0;color:var(--app-muted);font-size:1.2rem;cursor:pointer;padding:4px 8px;border-radius:8px;line-height:1}
+.del:hover{color:var(--app-ink);background:var(--app-surface)}
+.row-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 4px 0}
+.add{background:transparent;border:1px dashed var(--app-line);color:var(--app-ink);font:500 .9rem var(--font);padding:9px 16px;border-radius:10px;cursor:pointer}
+.add:hover{border-color:var(--accent)}
+.ex{font-size:.8rem;color:var(--app-muted)}
+.stat .range{display:block;font-size:.8rem;color:var(--app-muted);margin-top:4px}
+table.proj td:nth-child(n+2){color:var(--app-ink)}
+table.proj td.up{color:var(--accent)}
+
+/* ETF karşılaştırma */
+.duo{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--app-line);border-radius:14px}
+.side{padding:22px}
+.side + .side{border-left:1px solid var(--app-line)}
+.side .who{font-size:.8rem;color:var(--app-muted)}
+.side h3{font-size:1.15rem;font-weight:600;margin-top:2px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.side .val{font-size:2rem;font-weight:700;letter-spacing:-.03em;margin:14px 0 12px}
+.side.win .val{color:var(--accent)}
+.side dl{margin:0;display:grid;grid-template-columns:1fr auto;gap:6px 12px;font-size:.88rem}
+.side dt{color:var(--app-muted)}
+.side dd{margin:0;text-align:right}
+.badge{font-size:.72rem;font-weight:600;padding:3px 9px;border-radius:999px;background:color-mix(in srgb, var(--good) 22%, transparent);color:#7ee2b8}
+.callout{font-size:.95rem;line-height:1.55;padding:18px 20px;border-radius:14px;background:var(--app-surface)}
+.callout b{color:var(--accent);font-weight:600}
+.fine{font-size:.82rem;color:var(--app-muted);line-height:1.55}
+.fine b{color:var(--app-ink);font-weight:600}
+
+.placeholder{padding:56px 32px;display:grid;gap:12px;max-width:620px}
+.placeholder h3{font-size:1.4rem}
+.placeholder p{color:var(--app-muted)}
+.placeholder ul{margin:8px 0 0;padding-left:20px;color:var(--app-muted);display:grid;gap:4px}
+
+/* Yöntem */
+.method{display:grid;grid-template-columns:repeat(2,1fr);gap:44px 64px;max-width:980px}
+.method h3{font-size:1.08rem;font-weight:600;margin-bottom:10px}
+.method p{color:var(--muted);font-size:.96rem}
+.method .n{font-family:var(--font-serif);font-size:2.2rem;color:var(--brand);line-height:1;margin-bottom:14px;font-style:italic}
+
+/* Kavramlar */
+.terms{border-top:1px solid var(--line)}
+.term{display:grid;grid-template-columns:140px 1fr 260px;gap:32px;padding:26px 0;border-bottom:1px solid var(--line);align-items:baseline}
+.term .ab{font-size:1.5rem;font-weight:700;color:var(--brand);letter-spacing:-.02em}
+.term h3{font-size:1.05rem;font-weight:600;margin-bottom:6px}
+.term p{color:var(--muted);font-size:.96rem;max-width:58ch}
+.term .rule{font-size:.88rem;color:var(--muted)}
+.term .rule code{display:block;font:500 .88rem var(--font);color:var(--ink);margin-bottom:6px}
+
+/* SSS */
+.faq{display:grid;grid-template-columns:.8fr 1.2fr;gap:64px}
+.faq details{border-top:1px solid var(--line);padding:0}
+.faq details:last-child{border-bottom:1px solid var(--line)}
+.faq summary{list-style:none;cursor:pointer;padding:22px 40px 22px 0;font-weight:600;font-size:1.04rem;position:relative;color:var(--ink)}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";position:absolute;right:4px;top:18px;font-size:1.5rem;font-weight:400;color:var(--muted);transition:transform .2s}
+.faq details[open] summary::after{transform:rotate(45deg)}
+.faq details p{color:var(--muted);padding:0 40px 22px 0;max-width:62ch}
+
+/* Alt bilgi */
+footer{border-top:1px solid var(--line);padding:56px 0 40px;font-size:.9rem;color:var(--muted)}
+.fgrid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:48px}
+.fgrid h4{margin:0 0 12px;font-size:.88rem;color:var(--ink);font-weight:600}
+.fgrid ul{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.fgrid a{text-decoration:none}
+.fgrid a:hover{color:var(--ink)}
+.legal{margin-top:44px;padding-top:24px;border-top:1px solid var(--line);font-size:.8rem;line-height:1.6;display:grid;gap:10px}
+
+@media (max-width: 960px){
+  .hero .wrap,.faq{grid-template-columns:1fr;gap:40px}
+  .pane{grid-template-columns:1fr}
+  .inputs{border-right:0;border-bottom:1px solid var(--app-line)}
+  .method{grid-template-columns:1fr;gap:28px}
+  .term{grid-template-columns:110px 1fr;gap:16px}
+  .term .rule{grid-column:2}
+  .nav{display:none}
+  .bar .wrap{justify-content:space-between}
+}
+@media (max-width: 620px){
+  .wrap{padding:0 16px}
+  .stats{grid-template-columns:1fr}
+  .stat + .stat{border-left:0;border-top:1px solid var(--app-line)}
+  .duo{grid-template-columns:1fr}
+  .side + .side{border-left:0;border-top:1px solid var(--app-line)}
+  .fgrid{grid-template-columns:1fr}
+  .outputs,.inputs{padding:22px 18px}
+  .term{grid-template-columns:1fr}
+  .term .rule{grid-column:auto}
+  .section{padding:64px 0}
+  .rate span.lbl{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap">
+    <a class="brand" href="#ust" aria-label="BileşikTL ana sayfa">
+      <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true">
+        <rect width="32" height="32" rx="9" fill="var(--brand)"/>
+        <path d="M7 22.5 C12 22 15 19 17.5 14.5 S22.5 8.5 25.5 8.5" fill="none" stroke="var(--brand-ink)" stroke-width="2.6" stroke-linecap="round"/>
+        <circle cx="25.3" cy="8.6" r="2.4" fill="var(--accent)"/>
+      </svg>
+      <span>Bileşik<span class="tl">TL</span></span>
+    </a>
+    <nav class="nav" aria-label="Ana menü">
+      <a href="#araclar">Hesaplayıcılar</a>
+      <a href="#yontem">Nasıl hesaplıyoruz</a>
+      <a href="#kavramlar">Kavramlar</a>
+      <a href="#sss">Sık sorulanlar</a>
+    </nav>
+    <div class="rate" title="ABD doları / Türk lirası">
+      <span class="dot" id="k-dot"></span>
+      <span class="lbl">USD/TRY</span>
+      <strong id="k-deger">50,34</strong>
+      <span id="k-tarih">14 Kas</span>
+    </div>
+  </div>
+</header>
+
+<main id="ust">
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <h1>Lirayla biriktir, <span>dünyayla</span> büyüt.</h1>
+      <p class="lead">Türk lirasıyla yurt dışı hisse ve ETF'lere düzenli yatırım yapanlar için hesaplayıcılar. Kur artışını, komisyonu ve temettü stopajını hesaba katarak sana gerçekçi bir tablo çıkarır.</p>
+      <div class="actions">
+        <a class="btn btn-main" href="#araclar">Hesaplamaya başla</a>
+        <a class="btn btn-link" href="#yontem">Nasıl hesaplıyoruz?</a>
+      </div>
+      <div class="facts">
+        <div><b>Ücretsiz</b>Üyelik gerekmez</div>
+        <div><b>Gizli</b>Girdiğin rakamlar tarayıcında kalır</div>
+        <div><b>Şeffaf</b>Bütün varsayımlar açık</div>
+      </div>
+    </div>
+
+    <aside class="preview" aria-label="Hızlı birikim hesabı">
+      <h2>Hızlı hesap</h2>
+      <div class="slider">
+        <div class="row"><label for="q-aylik">Her ay yatırdığın</label><output id="q-aylik-v" for="q-aylik">5.000 TL</output></div>
+        <input type="range" id="q-aylik" min="500" max="50000" step="500" value="5000">
+      </div>
+      <div class="slider">
+        <div class="row"><label for="q-yil">Süre</label><output id="q-yil-v" for="q-yil">20 yıl</output></div>
+        <input type="range" id="q-yil" min="1" max="30" step="1" value="20">
+      </div>
+      <div class="result" aria-live="polite">
+        <div class="lbl">Tahmini birikimin</div>
+        <div class="big" id="q-sonuc">$0</div>
+        <div class="row2">
+          <div>Cebinden çıkan<b id="q-yatan">0 TL</b></div>
+          <div>Dolar karşılığı<b id="q-usd">$0</b></div>
+        </div>
+      </div>
+      <p class="foot">Yıllık %8 dolar getirisi, %15 kur artışı varsayımı. Başlangıç kuru <span id="q-kur">50,34</span>.</p>
+    </aside>
+  </div>
+</section>
+
+<section class="section soft" id="araclar">
+  <div class="wrap">
+    <div class="head">
+      <div class="kicker">Hesaplayıcılar</div>
+      <h2>Kendi rakamlarınla dene</h2>
+      <p>Varsayılan değerler örnektir. Her alanı kendi planına göre değiştirebilirsin; sonuçlar anında güncellenir.</p>
+    </div>
+
+    <div class="app">
+      <div class="tabs" role="tablist" aria-label="Hesaplayıcılar">
+        <button class="tab" role="tab" id="tab-birikim" aria-controls="pane-birikim" aria-selected="true">Birikim planı</button>
+        <button class="tab" role="tab" id="tab-portfoy" aria-controls="pane-portfoy" aria-selected="false" tabindex="-1">Portföy simülatörü</button>
+        <button class="tab" role="tab" id="tab-etf" aria-controls="pane-etf" aria-selected="false" tabindex="-1">ABD ETF'i mi, İrlanda ETF'i mi?</button>
+        <button class="tab" role="tab" id="tab-vergi" aria-controls="pane-vergi" aria-selected="false" tabindex="-1">Vergi hesabı <span class="soon">Yakında</span></button>
+      </div>
+
+      <!-- Birikim -->
+      <div class="pane" role="tabpanel" id="pane-birikim" aria-labelledby="tab-birikim">
+        <form class="inputs" id="f-birikim" onsubmit="return false">
+          <div class="grp">Katkı</div>
+          <div class="f"><label for="b-aylik">Aylık yatırım</label><div class="box"><input id="b-aylik" type="number" min="0" step="100" value="5000"><span class="unit">TL</span></div></div>
+          <div class="f"><label for="b-artis">Katkıyı her yıl artır</label><div class="box"><input id="b-artis" type="number" min="0" max="100" step="1" value="20"><span class="unit">%</span></div></div>
+          <div class="f"><label for="b-yil">Süre</label><div class="box"><input id="b-yil" type="number" min="1" max="40" step="1" value="20"><span class="unit">yıl</span></div></div>
+          <div class="grp">Piyasa varsayımları</div>
+          <div class="f"><label for="b-getiri">Yıllık getiri (dolar bazında)</label><div class="box"><input id="b-getiri" type="number" min="-20" max="40" step="0.5" value="8"><span class="unit">%</span></div></div>
+          <div class="f"><label for="b-kur">Başlangıç kuru</label><div class="box"><input id="b-kur" type="number" min="1" step="0.01" value="50.34"><span class="unit">USD/TRY</span></div></div>
+          <div class="f"><label for="b-kurartis">Yıllık kur artışı</label><div class="box"><input id="b-kurartis" type="number" min="0" max="200" step="1" value="15"><span class="unit">%</span></div></div>
+          <div class="f"><label for="b-kom">İşlem komisyonu</label><div class="box"><input id="b-kom" type="number" min="0" step="0.5" value="1.5"><span class="unit">$ / ay</span></div></div>
+          <p class="note">Geniş ABD endeksleri uzun vadede yıllık ortalama %7–10 dolar getirisi sağlamıştır. Geçmiş getiri geleceğin garantisi değildir.</p>
+        </form>
+        <div class="outputs">
+          <div class="stats">
+            <div class="stat"><small>Toplam yatırdığın</small><strong id="r-yatan">–</strong></div>
+            <div class="stat key"><small>Birikimin</small><strong id="r-usd">–</strong></div>
+            <div class="stat"><small>Dönem sonu kuruyla</small><strong id="r-tl">–</strong></div>
+          </div>
+          <div class="chart-wrap">
+            <div class="legend">
+              <span><i style="background:var(--accent)"></i>Birikim değeri</span>
+              <span><i style="background:var(--app-muted)"></i>Yatırılan anapara (dolar)</span>
+            </div>
+            <svg class="chart" id="chart" viewBox="0 0 680 280" role="img" aria-label="Yıllara göre birikim ve anapara grafiği"></svg>
+          </div>
+          <details>
+            <summary>Yıl yıl dökümü göster</summary>
+            <div class="tscroll"><table id="t-birikim"></table></div>
+          </details>
+        </div>
+      </div>
+
+      <!-- Portföy -->
+      <div class="pane" role="tabpanel" id="pane-portfoy" aria-labelledby="tab-portfoy" hidden>
+        <form class="inputs" id="f-portfoy" onsubmit="return false">
+          <div class="grp">Ek yatırım</div>
+          <div class="f"><label for="p-aylik">Her ay eklenecek</label><div class="box"><input id="p-aylik" type="number" min="0" step="100" value="5000"><span class="unit">TL</span></div></div>
+          <div class="f"><label for="p-artis">Eklemeyi her yıl artır</label><div class="box"><input id="p-artis" type="number" min="0" max="100" step="1" value="20"><span class="unit">%</span></div></div>
+          <div class="f"><label for="p-yil">Süre</label><div class="box"><input id="p-yil" type="number" min="1" max="30" step="1" value="10"><span class="unit">yıl</span></div></div>
+          <div class="grp">Varsayımlar</div>
+          <div class="f"><label for="p-kurartis">Yıllık kur artışı</label><div class="box"><input id="p-kurartis" type="number" min="0" max="200" step="1" value="15"><span class="unit">%</span></div></div>
+          <div class="f"><label for="p-kom">Emir başına komisyon</label><div class="box"><input id="p-kom" type="number" min="0" step="0.5" value="1.5"><span class="unit">$</span></div></div>
+          <p class="note">Fiyat ve getiri beklentisi otomatik gelir. Kendi değerini yazarsan o kullanılır; kutuyu boşaltınca otomatik değere döner.</p>
+          <p class="note">Aylık ekleme, payı olan her varlığa ayrı emirle dağıtılır ve her emirden komisyon düşülür.</p>
+        </form>
+        <div class="outputs">
+          <div>
+            <div class="hold-wrap">
+              <table class="hold" id="t-hold">
+                <colgroup><col style="width:140px"><col style="width:80px"><col style="width:120px"><col style="width:150px"><col style="width:100px"><col><col style="width:44px"></colgroup>
+                <thead><tr><th>Sembol</th><th>Adet</th><th>Fiyat ($)</th><th>Getiri beklentisi (%/yıl)</th><th>Yeni paranın payı (%)</th><th>Bugünkü değer</th><th></th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <datalist id="semboller"></datalist>
+            <div class="row-actions">
+              <button type="button" class="add" id="p-ekle">+ Varlık ekle</button>
+              <span class="ex" id="p-durum">–</span>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="stat"><small>Bugünkü değer</small><strong id="p-bugun">–</strong><span class="range" id="p-bugun-tl">–</span></div>
+            <div class="stat key"><small id="p-son-lbl">Dönem sonu (baz)</small><strong id="p-son">–</strong><span class="range" id="p-aralik">–</span></div>
+            <div class="stat"><small>Toplam eklenen</small><strong id="p-eklenen">–</strong><span class="range" id="p-eklenen-usd">–</span></div>
+          </div>
+          <div class="chart-wrap">
+            <div class="legend">
+              <span><i style="background:var(--accent)"></i>Baz senaryo</span>
+              <span><i style="background:var(--good)"></i>İyimser (%90 dilim)</span>
+              <span><i style="background:#d9776a"></i>Kötümser (%10 dilim)</span>
+              <span><i style="background:var(--app-muted)"></i>Yatırılan toplam</span>
+            </div>
+            <svg class="chart" id="p-chart" viewBox="0 0 680 280" role="img" aria-label="Portföy değerinin yıllara göre üç senaryolu grafiği"></svg>
+          </div>
+          <div>
+            <div class="tscroll"><table class="proj" id="t-proj"></table></div>
+            <p class="fine" style="margin-top:12px"><b>Tahmini fiyat</b>, bugünkü fiyatın beklenen yıllık getiriyle büyütülmesidir. Bir öngörü değil, aşağıda anlatılan varsayımların sonucudur.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ETF -->
+      <div class="pane" role="tabpanel" id="pane-etf" aria-labelledby="tab-etf" hidden>
+        <form class="inputs" id="f-etf" onsubmit="return false">
+          <div class="grp">Yatırım</div>
+          <div class="f"><label for="e-tutar">Tutar</label><div class="box"><input id="e-tutar" type="number" min="0" step="100" value="10000"><span class="unit">$</span></div></div>
+          <div class="f"><label for="e-yil">Süre</label><div class="box"><input id="e-yil" type="number" min="1" max="40" value="20"><span class="unit">yıl</span></div></div>
+          <div class="f"><label for="e-toplam">Toplam yıllık getiri</label><div class="box"><input id="e-toplam" type="number" step="0.5" value="9"><span class="unit">%</span></div></div>
+          <div class="f"><label for="e-temettu">Temettü verimi</label><div class="box"><input id="e-temettu" type="number" min="0" step="0.1" value="1.5"><span class="unit">%</span></div></div>
+          <div class="grp">Fonlar</div>
+          <div class="f"><label for="e-stopus">ABD fonu stopajı</label><div class="box"><input id="e-stopus" type="number" min="0" max="50" step="1" value="20"><span class="unit">%</span></div></div>
+          <div class="f"><label for="e-stopie">İrlanda fonu stopajı</label><div class="box"><input id="e-stopie" type="number" min="0" max="50" step="1" value="15"><span class="unit">%</span></div></div>
+          <div class="f"><label for="e-terus">ABD fonu TER</label><div class="box"><input id="e-terus" type="number" min="0" step="0.01" value="0.03"><span class="unit">%</span></div></div>
+          <div class="f"><label for="e-terie">İrlanda fonu TER</label><div class="box"><input id="e-terie" type="number" min="0" step="0.01" value="0.07"><span class="unit">%</span></div></div>
+          <p class="note">Stopaj oranları örnek değerdir. Kendi durumun için aracı kurumuna ya da bir vergi uzmanına danış.</p>
+        </form>
+        <div class="outputs">
+          <div class="duo">
+            <div class="side" id="fund-us">
+              <div class="who">ABD merkezli · temettü dağıtan</div>
+              <h3>ABD ETF'i</h3>
+              <div class="val" id="us-son">–</div>
+              <dl><dt>Net yıllık getiri</dt><dd id="us-net">–</dd><dt>Stopaja giden</dt><dd id="us-stop">–</dd><dt>Yönetim ücretine giden</dt><dd id="us-ter">–</dd></dl>
+            </div>
+            <div class="side" id="fund-ie">
+              <div class="who">İrlanda merkezli · biriktiren (UCITS)</div>
+              <h3>İrlanda ETF'i</h3>
+              <div class="val" id="ie-son">–</div>
+              <dl><dt>Net yıllık getiri</dt><dd id="ie-net">–</dd><dt>Stopaja giden</dt><dd id="ie-stop">–</dd><dt>Yönetim ücretine giden</dt><dd id="ie-ter">–</dd></dl>
+            </div>
+          </div>
+          <div class="callout" id="etf-sonuc">–</div>
+          <p class="fine"><b>Hesaba girmeyen bir fark:</b> ABD'de yerleşik olmayan yatırımcıların ABD merkezli varlıkları, 60.000 doları aşan kısım için ABD veraset vergisine tabi olabilir. İrlanda merkezli UCITS fonlarda bu risk yoktur. Türkiye'de beyan edilecek gelir vergisi de bu karşılaştırmaya dahil değildir.</p>
+        </div>
+      </div>
+
+      <!-- Vergi -->
+      <div class="pane" role="tabpanel" id="pane-vergi" aria-labelledby="tab-vergi" hidden>
+        <div class="placeholder">
+          <h3>Yurt dışı hisse vergi hesabı</h3>
+          <p>Mart beyan döneminden önce yayında olacak. Alış ve satışlarını girdiğinde şunları hesaplayacak:</p>
+          <ul>
+            <li>Her işlemin işlem tarihindeki kurla TL karşılığı</li>
+            <li>Yİ-ÜFE endekslemesinin uygulanıp uygulanmadığı</li>
+            <li>Beyan sınırını aşıp aşmadığın ve tahmini vergi</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="yontem">
+  <div class="wrap">
+    <div class="head">
+      <div class="kicker">Yöntem</div>
+      <h2>Nasıl hesaplıyoruz</h2>
+      <p>Hesaplayıcıların arkasındaki varsayımları açıkça yazıyoruz; sonucu neyin değiştirdiğini görebilmen için.</p>
+    </div>
+    <div class="method">
+      <div>
+        <div class="n">1</div>
+        <h3>Her ay ayrı kurla alım</h3>
+        <p>Aylık TL katkın, o ayın tahmini kuruyla dolara çevrilir. Kur her ay, girdiğin yıllık artış oranına göre yükselir. Komisyon her emirden ayrı düşülür.</p>
+      </div>
+      <div>
+        <div class="n">2</div>
+        <h3>Getiri beklentisi</h3>
+        <p>Finans profesyonellerinin kullandığı CAPM yöntemi: <b class="rfv">ABD 10 yıllık tahvil faizi</b> + beta × %4,5 piyasa risk primi. Beta, varlığın son 5 yılda piyasaya göre ne kadar sert hareket ettiğini gösterir. Riskli hisse daha yüksek getiri beklentisi alır, ama geçmişte çok yükselmiş olması tek başına beklentiyi artırmaz. Geçmiş getiri yalnızca bilgi olarak gösterilir.</p>
+      </div>
+      <div>
+        <div class="n">3</div>
+        <h3>Kötümser ve iyimser senaryo</h3>
+        <p>Senaryolar, varlığın son 5 yıldaki oynaklığından hesaplanır. Olası sonuçların yaklaşık %10'u kötümser senaryonun altında, %10'u iyimser senaryonun üstünde kalır. Süre uzadıkça yıllık ortalamadaki belirsizlik azalır.</p>
+      </div>
+      <div>
+        <div class="n">4</div>
+        <h3>Günlük veri</h3>
+        <p>Fiyatlar, geçmiş getiriler ve oynaklık her iş günü ABD piyasası kapandıktan sonra güncellenir. Döviz kuru Avrupa Merkez Bankası'nın referans kurundan alınır.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section soft" id="kavramlar">
+  <div class="wrap">
+    <div class="head">
+      <div class="kicker">Kavramlar</div>
+      <h2>Bir hisseye bakarken ilk altı oran</h2>
+      <p>Aralıklar sektöre göre değişir. Buradaki değerler kaba bir başlangıç noktasıdır, tek başına karar ölçütü değildir.</p>
+    </div>
+    <div class="terms">
+      <div class="term"><div class="ab">F/K</div><div><h3>Fiyat / Kazanç</h3><p>Şirketin bir yıllık kârının her 1 doları için piyasanın kaç dolar ödediğini gösterir. Yüksek olması, piyasanın güçlü büyüme beklediği anlamına gelir.</p></div><div class="rule"><code>Hisse fiyatı ÷ Hisse başına kâr</code>15–25 olağan, 40 üstü pahalı olabilir</div></div>
+      <div class="term"><div class="ab">PEG</div><div><h3>Büyümeye göre F/K</h3><p>F/K'yı kâr büyüme hızına böler. Hızlı büyüyen bir şirketin yüksek F/K'sının haklı olup olmadığını anlamaya yarar.</p></div><div class="rule"><code>F/K ÷ Yıllık kâr büyümesi (%)</code>1 civarı makul, 2 üstü pahalı olabilir</div></div>
+      <div class="term"><div class="ab">ROE</div><div><h3>Özsermaye kârlılığı</h3><p>Ortakların koyduğu her 100 liralık sermayeden yılda ne kadar kâr üretildiğini gösterir. Yönetimin parayı ne kadar verimli kullandığının ölçüsüdür.</p></div><div class="rule"><code>Net kâr ÷ Özsermaye</code>%15 üstü güçlü; yüksek borçla şişebilir</div></div>
+      <div class="term"><div class="ab">B/Ö</div><div><h3>Borç / Özsermaye</h3><p>Şirketin büyümesini ne ölçüde borçla finanse ettiğini gösterir. Faizler yükseldiğinde borcu yüksek şirketler daha çok zorlanır.</p></div><div class="rule"><code>Toplam borç ÷ Özsermaye</code>1'in altı rahat, 2 üstü dikkat</div></div>
+      <div class="term"><div class="ab">TER</div><div><h3>Toplam gider oranı</h3><p>Bir ETF'in her yıl fon değerinden kestiği yönetim ücreti. Küçük görünür, ama yirmi yılda bileşik olarak ciddi bir tutara ulaşır.</p></div><div class="rule"><code>Yıllık gider ÷ Fon büyüklüğü</code>%0,20 altı ucuz, %0,50 üstü pahalı</div></div>
+      <div class="term"><div class="ab">Stopaj</div><div><h3>Kaynakta vergi kesintisi</h3><p>Temettü ödenirken vergi olarak kesilen pay. Fonun kurulu olduğu ülke bu oranı değiştirir; kesinti her yıl tekrarlandığı için getiriyi kalıcı olarak düşürür.</p></div><div class="rule"><code>Brüt temettü × Stopaj oranı</code>Fonun yapısına göre değişir</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="sss">
+  <div class="wrap faq">
+    <div class="head">
+      <div class="kicker">Sık sorulanlar</div>
+      <h2>Aklına takılanlar</h2>
+      <p>Cevabını bulamadığın bir soru varsa yeni araçlar ve rehberler için bizi takip etmeye devam et.</p>
+    </div>
+    <div>
+      <details open><summary>Hesaplamalar ne kadar gerçekçi?</summary><p>Sonuçlar, girdiğin varsayımlara göre bir senaryodur, tahmin değildir. Gerçek getiriler yıldan yıla büyük dalgalanma gösterir; bazı yıllar eksi olur. Farklı getiri ve kur oranları deneyerek iyimser ve kötümser senaryoları birlikte görmeni öneririz.</p></details>
+      <details><summary>Fiyatlar ne sıklıkla güncelleniyor?</summary><p>Hisse ve ETF fiyatları her iş günü ABD piyasası kapandıktan sonra, kapanış fiyatıyla güncellenir. Gün içindeki anlık fiyatı göstermez; uzun vadeli hesaplar için kapanış fiyatı yeterlidir. Listede olmayan bir sembol için fiyatı elle girebilirsin.</p></details>
+      <details><summary>Getiri beklentisi neden geçmiş getiriden farklı?</summary><p>Son on yılda çok yükselmiş şirketlerin aynı hızla büyümeye devam etmesi istisnadır. Bu yüzden beklentiyi geçmiş performansa göre değil, varlığın taşıdığı riske göre (CAPM) hesaplıyoruz: oynak bir hisse daha yüksek getiri beklentisi alır, ama kötümser senaryosu da daha kötüdür. Kendi beklentin farklıysa kutuya kendi değerini yazabilirsin.</p></details>
+      <details><summary>Kur bilgisi nereden geliyor?</summary><p>Başlangıç kuru, Avrupa Merkez Bankası'nın her iş günü yayımladığı referans kurdan alınır. Bu, piyasada anlık işlem gören kurdan biraz farklı olabilir. Üst çubuktaki yeşil nokta, kurun canlı alındığını gösterir.</p></details>
+      <details><summary>İrlanda merkezli ETF ne demek?</summary><p>İrlanda'da kurulmuş ve Avrupa'nın UCITS kurallarına tabi fonlardır. ABD hisselerine yatırım yaparken temettülerde daha düşük stopaj ödeyebilir ve ABD veraset vergisi riskini ortadan kaldırabilirler. Biriktiren türleri temettüyü dağıtmak yerine fonun içinde yeniden yatırır.</p></details>
+      <details><summary>Girdiğim bilgiler kaydediliyor mu?</summary><p>Hayır. Bütün hesaplamalar senin tarayıcında yapılır; girdiğin tutarlar hiçbir sunucuya gönderilmez ve saklanmaz.</p></details>
+      <details><summary>Bu site yatırım tavsiyesi veriyor mu?</summary><p>Hayır. BileşikTL bir eğitim ve hesaplama aracıdır; hangi hisse ya da fonu alman gerektiğini söylemez. Yatırım kararlarını kendi araştırmana ve risk tercihine göre vermelisin.</p></details>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="fgrid">
+      <div>
+        <a class="brand" href="#ust">
+          <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="var(--brand)"/><path d="M7 22.5 C12 22 15 19 17.5 14.5 S22.5 8.5 25.5 8.5" fill="none" stroke="var(--brand-ink)" stroke-width="2.6" stroke-linecap="round"/><circle cx="25.3" cy="8.6" r="2.4" fill="var(--accent)"/></svg>
+          <span>Bileşik<span class="tl">TL</span></span>
+        </a>
+        <p style="margin-top:14px;max-width:36ch">TL ile yurt dışı yatırım yapanlar için ücretsiz hesaplayıcılar ve sade Türkçe rehberler.</p>
+      </div>
+      <div>
+        <h4>Hesaplayıcılar</h4>
+        <ul>
+          <li><a href="#araclar" data-tab="tab-birikim">Birikim planı</a></li>
+          <li><a href="#araclar" data-tab="tab-portfoy">Portföy simülatörü</a></li>
+          <li><a href="#araclar" data-tab="tab-etf">ABD ve İrlanda ETF karşılaştırması</a></li>
+          <li><a href="#araclar" data-tab="tab-vergi">Vergi hesabı</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Öğren</h4>
+        <ul>
+          <li><a href="#yontem">Nasıl hesaplıyoruz</a></li>
+          <li><a href="#kavramlar">Temel kavramlar</a></li>
+          <li><a href="#sss">Sık sorulanlar</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="legal">
+      <p><b style="color:var(--ink)">Yatırım tavsiyesi değildir.</b> Bu sitedeki bilgi, yorum ve hesaplamalar 6362 sayılı Sermaye Piyasası Kanunu kapsamında yatırım danışmanlığı niteliği taşımaz. Sonuçlar girilen varsayımlara dayalı senaryolardır ve gerçek getirilerden farklı olabilir.</p>
+      <p>© 2026 BileşikTL</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  const KAYITLI = {kur:50.34, tarih:'2026-11-14'};
+  let KUR = KAYITLI.kur;
+  let kurElleDegisti = false;
+
+  const fmtTL = n => Math.round(n).toLocaleString('tr-TR') + ' TL';
+  const fmtUSD = n => '$' + Math.round(n).toLocaleString('tr-TR');
+  const fmtPct = n => '%' + n.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const kisa = n => {
+    const a = Math.abs(n);
+    if (a >= 1e6) return (n/1e6).toLocaleString('tr-TR',{maximumFractionDigits:1}) + ' mn';
+    if (a >= 1e3) return (n/1e3).toLocaleString('tr-TR',{maximumFractionDigits:0}) + ' bin';
+    return Math.round(n).toString();
+  };
+  const $ = id => document.getElementById(id);
+  const v = id => parseFloat($(id).value) || 0;
+  const set = (id, t) => { $(id).textContent = t; };
+
+  function simule(o){
+    let usd = 0, yatanTL = 0, yatanUSD = 0, katki = o.aylik, kur = o.kur;
+    const ag = Math.pow(1 + o.getiri/100, 1/12) - 1;
+    const ak = Math.pow(1 + o.kurArtis/100, 1/12) - 1;
+    const yillar = [];
+    for (let y = 1; y <= o.yil; y++){
+      for (let m = 0; m < 12; m++){
+        usd += Math.max(katki / kur - (o.kom || 0), 0);
+        yatanTL += katki; yatanUSD += katki / kur;
+        usd *= (1 + ag); kur *= (1 + ak);
+      }
+      yillar.push({yil:y, katki, yatanTL, yatanUSD, usd, kur, tl: usd*kur});
+      katki *= (1 + (o.artis||0)/100);
+    }
+    return {usd, yatanTL, yatanUSD, kur, tl: usd*kur, yillar};
+  }
+
+  function hizli(){
+    const aylik = v('q-aylik'), yil = v('q-yil');
+    set('q-aylik-v', aylik.toLocaleString('tr-TR') + ' TL');
+    set('q-yil-v', yil + ' yıl');
+    const r = simule({aylik, yil, getiri:8, kur:KUR, kurArtis:15, artis:0, kom:0});
+    set('q-sonuc', fmtUSD(r.usd));
+    set('q-yatan', fmtTL(r.yatanTL));
+    set('q-usd', fmtUSD(r.yatanUSD));
+  }
+
+  function ciz(yillar){
+    const W=680,H=280,L=60,R=18,T=12,B=30;
+    const max = Math.max(...yillar.map(y=>Math.max(y.usd,y.yatanUSD)), 1);
+    const kd = Math.pow(10, Math.floor(Math.log10(max)));
+    const adim = [1,2,2.5,5,10].map(k=>k*kd).find(s => max/s <= 5);
+    const ust = Math.ceil(max/adim)*adim;
+    const x = i => L + (W-L-R) * (yillar.length===1 ? 1 : i/(yillar.length-1));
+    const y = val => T + (H-T-B) * (1 - val/ust);
+    let s = '<defs><linearGradient id="g" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".28"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>';
+    for (let g=0; g<=ust+1e-9; g+=adim){
+      s += `<line x1="${L}" x2="${W-R}" y1="${y(g)}" y2="${y(g)}" stroke="var(--app-line)"/>`;
+      s += `<text x="${L-10}" y="${y(g)+4}" text-anchor="end">$${kisa(g)}</text>`;
+    }
+    const ea = Math.max(1, Math.ceil(yillar.length/7));
+    yillar.forEach((d,i)=>{
+      if ((yillar.length-1-i)%ea===0)
+        s += `<text x="${x(i)}" y="${H-8}" text-anchor="${i===yillar.length-1?'end':'middle'}">${d.yil}. yıl</text>`;
+    });
+    const yol = key => yillar.map((d,i)=>`${i?'L':'M'}${x(i).toFixed(1)},${y(d[key]).toFixed(1)}`).join(' ');
+    s += `<path d="${yol('usd')} L${x(yillar.length-1)},${y(0)} L${x(0)},${y(0)} Z" fill="url(#g)"/>`;
+    s += `<path d="${yol('yatanUSD')}" fill="none" stroke="var(--app-muted)" stroke-width="1.6" stroke-dasharray="4 4"/>`;
+    s += `<path d="${yol('usd')}" fill="none" stroke="var(--accent)" stroke-width="2.6" stroke-linejoin="round"/>`;
+    const son = yillar[yillar.length-1];
+    s += `<circle cx="${x(yillar.length-1)}" cy="${y(son.usd)}" r="5" fill="var(--accent)" stroke="var(--app)" stroke-width="2.5"/>`;
+    $('chart').innerHTML = s;
+  }
+
+  function birikim(){
+    const o = {aylik:v('b-aylik'), artis:v('b-artis'), yil:Math.max(1,Math.min(40,Math.round(v('b-yil')))),
+               getiri:v('b-getiri'), kur:Math.max(v('b-kur'),0.01), kurArtis:v('b-kurartis'), kom:v('b-kom')};
+    const r = simule(o);
+    set('r-yatan', fmtTL(r.yatanTL));
+    set('r-usd', fmtUSD(r.usd));
+    set('r-tl', fmtTL(r.tl));
+    ciz(r.yillar);
+    let h = '<thead><tr><th>Yıl</th><th>Aylık katkı</th><th>Toplam yatırılan</th><th>Kur</th><th>Birikim ($)</th><th>Birikim (TL)</th></tr></thead><tbody>';
+    r.yillar.forEach(d=>{
+      h += `<tr><td>${d.yil}</td><td>${fmtTL(d.katki)}</td><td>${fmtTL(d.yatanTL)}</td><td>${d.kur.toLocaleString('tr-TR',{maximumFractionDigits:2})}</td><td>${fmtUSD(d.usd)}</td><td>${fmtTL(d.tl)}</td></tr>`;
+    });
+    $('t-birikim').innerHTML = h + '</tbody>';
+  }
+
+  function etf(){
+    const P=v('e-tutar'), n=Math.max(1,Math.round(v('e-yil'))), tot=v('e-toplam')/100, d=v('e-temettu')/100;
+    const fon = (stop, ter) => {
+      let deger = P, stopT = 0, terT = 0;
+      for (let i=0;i<n;i++){
+        const kes = deger * d * stop/100, gid = deger * ter/100;
+        stopT += kes; terT += gid;
+        deger = deger * (1+tot) - kes - gid;
+      }
+      return {deger, stopT, terT, net:(Math.pow(Math.max(deger,0)/P, 1/n) - 1) * 100};
+    };
+    const us = fon(v('e-stopus'), v('e-terus')), ie = fon(v('e-stopie'), v('e-terie'));
+    set('us-son', fmtUSD(us.deger)); set('ie-son', fmtUSD(ie.deger));
+    set('us-net', fmtPct(us.net)); set('ie-net', fmtPct(ie.net));
+    set('us-stop', fmtUSD(us.stopT)); set('ie-stop', fmtUSD(ie.stopT));
+    set('us-ter', fmtUSD(us.terT)); set('ie-ter', fmtUSD(ie.terT));
+    const fark = ie.deger - us.deger, kazanan = fark >= 0 ? 'ie' : 'us';
+    ['us','ie'].forEach(k=>{
+      const el = $('fund-'+k);
+      el.classList.toggle('win', k===kazanan);
+      const eski = el.querySelector('.badge'); if (eski) eski.remove();
+      if (k===kazanan){ const b=document.createElement('span'); b.className='badge'; b.textContent='Daha yüksek'; el.querySelector('h3').appendChild(b); }
+    });
+    const ad = kazanan==='ie' ? 'İrlanda fonu' : 'ABD fonu';
+    $('etf-sonuc').innerHTML = `${n} yıl sonunda ${ad}, aynı yatırım için yaklaşık <b>${fmtUSD(Math.abs(fark))}</b> daha fazla bırakıyor. Bu fark, başlangıç tutarının <b>%${(Math.abs(fark)/(P||1)*100).toLocaleString('tr-TR',{maximumFractionDigits:1})}</b>'ine denk.`;
+  }
+
+  // ---------- Portföy simülatörü ----------
+  const SEED = {"updated":"2026-11-14","seed":true,"model":{"method":"capm","rf":0.0513,"erp":0.045},"count":7,"symbols":{"AAPL":{"n":"Apple Inc.","t":"stock","y":"AAPL","p":356.27,"r1":0.3078,"r3":0.2387,"r5":0.1889,"r10":0.2971,"v":null,"b":1.049},"MSFT":{"n":"Microsoft","t":"stock","y":"MSFT","p":523.88,"r1":0.0269,"r3":0.1226,"r5":0.0928,"r10":0.2459,"v":null,"b":1.029},"NVDA":{"n":"Nvidia","t":"stock","y":"NVDA","p":162.85,"r1":-0.1437,"r3":0.4857,"r5":0.4023,"r10":0.5458,"v":null,"b":1.815},"GOOGL":{"n":"Alphabet Inc. (Class A)","t":"stock","y":"GOOGL","p":295.77,"r1":0.07,"r3":0.3032,"r5":0.1478,"r10":0.2289,"v":null,"b":1.151},"AMZN":{"n":"Amazon","t":"stock","y":"AMZN","p":266.66,"r1":0.1362,"r3":0.2229,"r5":0.0851,"r10":0.2219,"v":null,"b":1.337},"META":{"n":"Meta Platforms","t":"stock","y":"META","p":641.69,"r1":0.0529,"r3":0.2403,"r5":0.1305,"r10":0.1875,"v":null,"b":1.187},"AMD":{"n":"Advanced Micro Devices","t":"stock","y":"AMD","p":534.06,"r1":1.1639,"r3":0.6454,"r5":0.2953,"r10":0.5473,"v":null,"b":2.0}}};
+  let DATA = SEED;
+  const SIGMA_YEDEK = {stock:0.30, etf:0.17, ucits:0.16};
+  const Z90 = 1.2816;
+
+  const veri = s => {
+    if (!s) return null;
+    s = s.trim().toUpperCase();
+    return DATA.symbols[s] || DATA.symbols[s.replace('-', '.')] || DATA.symbols[s.split('.')[0]] || null;
+  };
+  const gecmis = d => d ? (d.r10 ?? d.r5 ?? d.r3 ?? null) : null;
+  const gecmisEtiket = d => d ? (d.r10 != null ? '10 yıl' : d.r5 != null ? '5 yıl' : d.r3 != null ? '3 yıl' : '') : '';
+  // CAPM: risksiz faiz + beta × piyasa risk primi
+  const MODEL = () => Object.assign({rf:0.045, erp:0.045}, DATA.model || {});
+  const betaOf = d => d && d.b != null ? d.b : 1;
+  function modelGetiri(d){ const m = MODEL(); return m.rf + betaOf(d) * m.erp; }
+  const sigma = d => d && d.v != null ? d.v : SIGMA_YEDEK[(d && d.t) || 'stock'];
+
+  const ORNEK = [
+    {s:'NVDA', a:5, w:30}, {s:'MSFT', a:2, w:25}, {s:'AAPL', a:3, w:25}, {s:'GOOGL', a:3, w:20}
+  ];
+  let varliklar, ornekMi = true;
+  try { const k = JSON.parse(localStorage.getItem('bilesiktl-portfoy-v2')); if (Array.isArray(k) && k.length) { varliklar = k; ornekMi = false; } } catch(e) {}
+  if (!varliklar) varliklar = ORNEK.map(x=>({...x}));
+  const kaydet = () => { try { localStorage.setItem('bilesiktl-portfoy-v2', JSON.stringify(varliklar)); } catch(e) {} };
+  const esc = t => String(t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const pctTxt = x => '%' + (x*100).toLocaleString('tr-TR',{maximumFractionDigits:1});
+
+  // Bir varlığın hesapta kullanılacak değerleri
+  function coz(x){
+    const d = veri(x.s);
+    const fiyat = x.f != null && x.f !== '' ? +x.f : (d ? d.p : 0);
+    const g = x.g != null && x.g !== '' ? (+x.g)/100 : modelGetiri(d);
+    return {d, fiyat: fiyat || 0, g, sig: sigma(d)};
+  }
+
+  function satirIpucu(i){
+    const x = varliklar[i], d = veri(x.s);
+    const nm = $('nm-'+i), hs = $('hs-'+i), fi = $('fi-'+i), gi = $('gi-'+i);
+    if (!nm) return;
+    if (!x.s){ nm.textContent = ''; nm.className='nm'; }
+    else if (d){ nm.textContent = d.n; nm.className='nm'; nm.title = d.n; }
+    else { nm.textContent = 'Listede yok, fiyatı elle gir'; nm.className='nm bad'; }
+    fi.placeholder = d ? d.p.toLocaleString('en-US',{maximumFractionDigits:2}) : '0';
+    gi.placeholder = (modelGetiri(d)*100).toFixed(1);
+    fi.classList.toggle('ovr', x.f != null && x.f !== '');
+    gi.classList.toggle('ovr', x.g != null && x.g !== '');
+    const g = gecmis(d);
+    const parca = [];
+    if (d && d.b != null) parca.push('Beta ' + d.b.toLocaleString('tr-TR',{maximumFractionDigits:2}));
+    if (g != null) parca.push(`${gecmisEtiket(d)}: ${pctTxt(g)}`);
+    hs.textContent = parca.join(' · ');
+    hs.title = g != null ? `Son ${gecmisEtiket(d)}daki yıllık ortalama getiri (bilgi amaçlı, hesapta kullanılmaz)` : '';
+  }
+
+  function tabloCiz(){
+    $('t-hold').querySelector('tbody').innerHTML = varliklar.map((x,i)=>`<tr>
+      <td><input class="sym" list="semboller" data-i="${i}" data-k="s" value="${esc(x.s||'')}" aria-label="Sembol" maxlength="10" autocomplete="off"><span class="nm" id="nm-${i}"></span></td>
+      <td><input type="number" min="0" step="any" data-i="${i}" data-k="a" value="${x.a ?? ''}" aria-label="Adet"></td>
+      <td><input type="number" min="0" step="any" id="fi-${i}" data-i="${i}" data-k="f" value="${x.f ?? ''}" aria-label="Fiyat (boş bırakılırsa otomatik)"></td>
+      <td><input type="number" step="0.5" id="gi-${i}" data-i="${i}" data-k="g" value="${x.g ?? ''}" aria-label="Getiri beklentisi (boş bırakılırsa otomatik)"><span class="hist" id="hs-${i}"></span></td>
+      <td><input type="number" min="0" step="1" data-i="${i}" data-k="w" value="${x.w ?? ''}" aria-label="Yeni paranın payı"></td>
+      <td class="val" id="hv-${i}">–</td>
+      <td><button type="button" class="del" data-del="${i}" aria-label="Sil">×</button></td>
+    </tr>`).join('');
+    varliklar.forEach((_,i)=>satirIpucu(i));
+  }
+
+  function modelYaz(){
+    const m = MODEL();
+    document.querySelectorAll('.rfv').forEach(el=>{ el.textContent = `ABD 10 yıllık tahvil faizi (şu an ${pctTxt(m.rf)})`; });
+  }
+  function durumYaz(){
+    modelYaz();
+    const t = new Date((DATA.updated||'') + 'T12:00:00');
+    const tarih = isNaN(t) ? '' : t.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
+    const say = (DATA.count || Object.keys(DATA.symbols).length).toLocaleString('tr-TR');
+    $('p-durum').textContent = (ornekMi ? 'Örnek portföy gösteriliyor. ' : '') +
+      (DATA.seed ? `Önizleme verisi: ${say} sembol, ${tarih}. Günlük güncelleme açılınca liste genişler.`
+                 : `Fiyatlar ${tarih} kapanışı · ${say} sembol`);
+    $('semboller').innerHTML = Object.entries(DATA.symbols).map(([k,d])=>`<option value="${esc(k)}">${esc(d.n)}</option>`).join('');
+  }
+
+  function portfoySim(z){
+    const yil = Math.max(1, Math.min(30, Math.round(v('p-yil'))));
+    const kom = v('p-kom'), ak = Math.pow(1 + v('p-kurartis')/100, 1/12) - 1;
+    let kur = KUR, katki = v('p-aylik');
+    const st = varliklar.map(x=>{
+      const c = coz(x);
+      const g = Math.max(-0.5, c.g + z * c.sig / Math.sqrt(yil));
+      return {adet:Math.max(+x.a||0,0), f0:c.fiyat, g, w:Math.max(+x.w||0,0)};
+    });
+    const wTop = st.reduce((t,x)=>t + (x.f0 ? x.w : 0), 0);
+    let yatanTL = 0, yatanUSD = st.reduce((t,x)=>t + x.adet*x.f0, 0);
+    const seri = [{yil:0, deger:yatanUSD, yatan:yatanUSD}];
+    for (let y=1; y<=yil; y++){
+      for (let m=1; m<=12; m++){
+        const ay = (y-1)*12 + m, usd = katki / kur;
+        yatanTL += katki; yatanUSD += usd;
+        st.forEach(x=>{
+          if (!wTop || !x.w || !x.f0) return;
+          const pay = usd * x.w / wTop - kom;
+          if (pay > 0) x.adet += pay / (x.f0 * Math.pow(1 + x.g, ay/12));
+        });
+        kur *= (1 + ak);
+      }
+      seri.push({yil:y, deger: st.reduce((t,x)=>t + x.adet * x.f0 * Math.pow(1 + x.g, y), 0), yatan:yatanUSD});
+      if (y < yil) katki *= (1 + v('p-artis')/100);
+    }
+    return {yil, seri, yatanTL, yatanUSD, sonuc: st.map(x=>({adet:x.adet, fiyat:x.f0*Math.pow(1+x.g, yil), g:x.g}))};
+  }
+
+  function cizPortfoy(baz, iyi, kot){
+    const W=680,H=280,L=60,R=18,T=12,B=30, n = baz.seri.length;
+    const max = Math.max(...iyi.seri.map(d=>d.deger), ...baz.seri.map(d=>d.yatan), 1);
+    const kd = Math.pow(10, Math.floor(Math.log10(max)));
+    const adim = [1,2,2.5,5,10].map(k=>k*kd).find(q => max/q <= 5);
+    const ust = Math.ceil(max/adim)*adim;
+    const x = i => L + (W-L-R) * (n===1 ? 1 : i/(n-1));
+    const y = val => T + (H-T-B) * (1 - val/ust);
+    let s = '';
+    for (let g=0; g<=ust+1e-9; g+=adim){
+      s += `<line x1="${L}" x2="${W-R}" y1="${y(g)}" y2="${y(g)}" stroke="var(--app-line)"/>`;
+      s += `<text x="${L-10}" y="${y(g)+4}" text-anchor="end">$${kisa(g)}</text>`;
+    }
+    const ea = Math.max(1, Math.ceil((n-1)/7));
+    baz.seri.forEach((d,i)=>{ if (i && (n-1-i)%ea===0) s += `<text x="${x(i)}" y="${H-8}" text-anchor="${i===n-1?'end':'middle'}">${d.yil}. yıl</text>`; });
+    s += `<text x="${x(0)}" y="${H-8}" text-anchor="start">Bugün</text>`;
+    const yol = (seri,key) => seri.map((d,i)=>`${i?'L':'M'}${x(i).toFixed(1)},${y(d[key]).toFixed(1)}`).join(' ');
+    s += `<path d="${yol(iyi.seri,'deger')} ${kot.seri.slice().reverse().map((d,j)=>`L${x(n-1-j).toFixed(1)},${y(d.deger).toFixed(1)}`).join(' ')} Z" fill="var(--accent)" opacity=".10"/>`;
+    s += `<path d="${yol(baz.seri,'yatan')}" fill="none" stroke="var(--app-muted)" stroke-width="1.6" stroke-dasharray="4 4"/>`;
+    s += `<path d="${yol(kot.seri,'deger')}" fill="none" stroke="#d9776a" stroke-width="1.6"/>`;
+    s += `<path d="${yol(iyi.seri,'deger')}" fill="none" stroke="var(--good)" stroke-width="1.6"/>`;
+    s += `<path d="${yol(baz.seri,'deger')}" fill="none" stroke="var(--accent)" stroke-width="2.6" stroke-linejoin="round"/>`;
+    s += `<circle cx="${x(n-1)}" cy="${y(baz.seri[n-1].deger)}" r="5" fill="var(--accent)" stroke="var(--app)" stroke-width="2.5"/>`;
+    $('p-chart').innerHTML = s;
+  }
+  const fmtUSD2 = n => '$' + n.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  function portfoy(){
+    const baz = portfoySim(0), iyi = portfoySim(Z90), kot = portfoySim(-Z90);
+    let bugun = 0;
+    varliklar.forEach((x,i)=>{ const val = Math.max(+x.a||0,0) * coz(x).fiyat; bugun += val; const el = $('hv-'+i); if (el) el.textContent = fmtUSD(val); });
+    const son = baz.seri[baz.seri.length-1];
+    set('p-bugun', fmtUSD(bugun)); set('p-bugun-tl', fmtTL(bugun*KUR));
+    set('p-son-lbl', `${baz.yil} yıl sonra (baz)`); set('p-son', fmtUSD(son.deger));
+    set('p-aralik', `${fmtUSD(kot.seri[kot.seri.length-1].deger)} – ${fmtUSD(iyi.seri[iyi.seri.length-1].deger)}`);
+    set('p-eklenen', fmtTL(baz.yatanTL)); set('p-eklenen-usd', '≈ ' + fmtUSD(baz.yatanUSD - bugun));
+    cizPortfoy(baz, iyi, kot);
+    let h = `<thead><tr><th>Varlık</th><th>Bugünkü fiyat</th><th>Beklenen getiri</th><th>Tahmini fiyat (${baz.yil}. yıl)</th><th>Tahmini adet</th><th>Tahmini değer</th></tr></thead><tbody>`;
+    varliklar.forEach((x,i)=>{
+      const r = baz.sonuc[i], c = coz(x);
+      h += `<tr><td>${esc(x.s || '—')}</td><td>${fmtUSD2(c.fiyat)}</td><td>${pctTxt(r.g)}</td><td class="up">${fmtUSD2(r.fiyat)}</td><td>${r.adet.toLocaleString('tr-TR',{maximumFractionDigits:2})}</td><td>${fmtUSD(r.adet*r.fiyat)}</td></tr>`;
+    });
+    $('t-proj').innerHTML = h + '</tbody>';
+  }
+
+  $('t-hold').addEventListener('input', e=>{
+    const t = e.target, k = t.dataset.k; if (!k) return;
+    const i = +t.dataset.i, x = varliklar[i];
+    if (k==='s') x.s = t.value.toUpperCase();
+    else if (k==='f' || k==='g') x[k] = t.value === '' ? null : parseFloat(t.value);
+    else x[k] = parseFloat(t.value) || 0;
+    if (ornekMi){ ornekMi = false; durumYaz(); }
+    kaydet(); satirIpucu(i); portfoy();
+  });
+  $('t-hold').addEventListener('click', e=>{
+    const d = e.target.closest('[data-del]'); if (!d) return;
+    varliklar.splice(+d.dataset.del, 1); ornekMi = false; kaydet(); tabloCiz(); durumYaz(); portfoy();
+  });
+  $('p-ekle').addEventListener('click', ()=>{
+    varliklar.push({s:'', a:0, w:0}); ornekMi = false; kaydet(); tabloCiz(); durumYaz(); portfoy();
+    const ins = $('t-hold').querySelectorAll('input.sym'); ins[ins.length-1].focus();
+  });
+  $('f-portfoy').addEventListener('input', portfoy);
+  tabloCiz(); durumYaz();
+
+  // Günlük veri dosyasını yükle (aynı sitedeki data/prices.json)
+  fetch('data/prices.json', {cache:'no-cache'}).then(r=>r.ok ? r.json() : null).then(j=>{
+    if (j && j.symbols && Object.keys(j.symbols).length){ DATA = j; tabloCiz(); durumYaz(); portfoy(); }
+  }).catch(()=>{});
+
+  // Sekmeler
+  const tabs = [...document.querySelectorAll('.tab')];
+  function sec(tab){
+    tabs.forEach(t=>{
+      const on = t===tab;
+      t.setAttribute('aria-selected', on); t.tabIndex = on ? 0 : -1;
+      $(t.getAttribute('aria-controls')).hidden = !on;
+    });
+  }
+  tabs.forEach((t,i)=>{
+    t.addEventListener('click', ()=>sec(t));
+    t.addEventListener('keydown', e=>{
+      if (e.key==='ArrowRight'||e.key==='ArrowLeft'){
+        const n = tabs[(i + (e.key==='ArrowRight'?1:-1) + tabs.length) % tabs.length];
+        sec(n); n.focus();
+      }
+    });
+  });
+  document.querySelectorAll('[data-tab]').forEach(a=>a.addEventListener('click', ()=>sec($(a.dataset.tab))));
+
+  // Kur
+  function kuruUygula(kur, tarih, canli){
+    KUR = kur;
+    const yazi = kur.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    set('k-deger', yazi); set('q-kur', yazi);
+    const t = new Date(tarih + 'T12:00:00');
+    set('k-tarih', isNaN(t) ? tarih : t.toLocaleDateString('tr-TR',{day:'numeric',month:'short'}));
+    $('k-dot').classList.toggle('live', !!canli);
+    $('k-dot').title = canli ? 'Canlı kur' : 'Kayıtlı kur';
+    if (!kurElleDegisti) $('b-kur').value = kur.toFixed(2);
+    hizli(); birikim(); portfoy();
+  }
+  async function kurCek(){
+    const sure = ms => { const c = new AbortController(); setTimeout(()=>c.abort(), ms); return c.signal; };
+    const kaynaklar = [
+      async () => { const j = await (await fetch('https://api.frankfurter.app/latest?from=USD&to=TRY',{signal:sure(5000)})).json(); return {kur:j.rates.TRY, tarih:j.date}; },
+      async () => { const j = await (await fetch('https://open.er-api.com/v6/latest/USD',{signal:sure(5000)})).json(); return {kur:j.rates.TRY, tarih:new Date(j.time_last_update_unix*1000).toISOString().slice(0,10)}; }
+    ];
+    for (const k of kaynaklar){
+      try { const d = await k(); if (d.kur > 0) { kuruUygula(d.kur, d.tarih, true); return; } } catch(e) {}
+    }
+  }
+  $('b-kur').addEventListener('input', ()=>{ kurElleDegisti = true; });
+
+  ['q-aylik','q-yil'].forEach(id=>$(id).addEventListener('input', hizli));
+  $('f-birikim').addEventListener('input', birikim);
+  $('f-etf').addEventListener('input', etf);
+  hizli(); birikim(); etf(); portfoy();
+  kurCek();
+})();
+</script>
+</body>
+</html>
